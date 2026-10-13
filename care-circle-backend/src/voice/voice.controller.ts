@@ -3,14 +3,17 @@ import {
   Post,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { VoiceService } from './voice.service';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('voice')
+@UseGuards(AuthGuard)
 export class VoiceController {
   constructor(private readonly voiceService: VoiceService) {}
 

@@ -112,3 +112,19 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Care Circle backend
+
+## Authentication and demo accounts
+
+The auth module creates the `care_circle_users` table in the configured PostgreSQL database when the backend starts. It stores password hashes, not plaintext passwords. Set `AUTH_JWT_SECRET` to a long random value before deployment; the development default is only for local use.
+
+In non-production mode, the backend seeds these sample accounts if they do not already exist:
+
+| Account | Email | Password |
+| --- | --- | --- |
+| Caregiver | `demo@carecircle.test` | `CareCircle123!` |
+| Older adult | `olderadult@carecircle.test` | `CareCircle123!` |
+
+Create another account from the app's Sign up screen. The current voice endpoint requires a valid bearer token from login/signup.
+
+The Expo app reads its backend address from `EXPO_PUBLIC_API_URL`. Copy the root `.env.example` to `.env` and set that URL to the development computer's reachable address. On a physical phone, use the computer's LAN IP and keep both devices on the same network.

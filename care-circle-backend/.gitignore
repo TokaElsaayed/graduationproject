@@ -1,6 +1,8 @@
 # compiled output
 /dist
 /node_modules
+/\.venv/
+/__pycache__/
 /build
 
 # TypeScript build cache
