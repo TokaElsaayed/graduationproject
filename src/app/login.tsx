@@ -41,6 +41,19 @@ export default function LoginScreen() {
     }
   }
 
+  async function useOlderAdultDemoAccount() {
+    setError('');
+    setLoading(true);
+    try {
+      await logIn('olderadult@carecircle.test', 'CareCircle123!');
+      router.replace('/profile');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Could not sign in. Try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -79,6 +92,9 @@ export default function LoginScreen() {
           <Text style={authStyles.demoText}>Password: CareCircle123!</Text>
           <Pressable onPress={useDemoAccount} disabled={loading} style={authStyles.linkButton}>
             <Text style={authStyles.linkText}>Continue with demo account</Text>
+          </Pressable>
+          <Pressable onPress={useOlderAdultDemoAccount} disabled={loading} style={authStyles.linkButton}>
+            <Text style={authStyles.linkText}>Continue with older adult demo</Text>
           </Pressable>
         </View>
 

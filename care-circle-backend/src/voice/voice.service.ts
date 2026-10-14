@@ -1,26 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Groq from 'groq-sdk';
 import * as fs from 'fs';
 import { basename } from 'path';
+import { ProfileService } from '../profiles/profile.service';
+
+const CARE_CIRCLE_INSTRUCTIONS = `أنت مساعد Care Circle الصوتي، لطيف وهادئ وبتساعد كبار السن في مصر.
+اتكلم  المصرية البسيطة والواضحة، بجمل قصيرة وسهلة.
+لا تقدم تشخيصًا أو نصيحة طبية. لو المستخدم حاسس بتعب أو دوخة، شجعه بهدوء إنه يكلم أحد أفراد العائلة.
+لو الطلب مش واضح، اطلب منه يعيده بهدوء. خليك ودود ومحترم.`;
 
 @Injectable()
 export class VoiceService {
-  private groq: Groq;
+  constructor(
+    private readonly config: ConfigService,
+    private readonly profiles: ProfileService,
+  ) {}
 
-  constructor(private config: ConfigService) {
-    this.groq = new Groq({
-      apiKey: this.config.get<string>('GROQ_API_KEY'),
-    });
-  }
-
-  async processAudio(filePath: string): Promise<{
+  async processAudio(filePath: string, userId: string): Promise<{
     transcript: string;
     reply: string;
   }> {
     try {
       const transcript = await this.speechToText(filePath);
-      const reply = await this.generateReply(transcript);
+      const context = this.profiles.buildPersonalContext(userId);
+      const reply = await this.generateReply(transcript, context);
       return { transcript, reply };
     } finally {
       try {
@@ -29,6 +32,14 @@ export class VoiceService {
         console.warn('Could not delete temporary audio file:', filePath);
       }
     }
+  }
+
+  private getGroqApiKey(): string {
+    const apiKey = this.config.get<string>('GROQ_API_KEY');
+    if (!apiKey) {
+      throw new Error('GROQ_API_KEY is missing from the backend environment');
+    }
+    return apiKey;
   }
 
   private async speechToText(filePath: string): Promise<string> {
@@ -57,41 +68,47 @@ export class VoiceService {
     return result.transcript;
   }
 
-  private async generateReply(userText: string): Promise<string> {
-    const completion = await this.groq.chat.completions.create({
-      model: 'openai/gpt-oss-20b', // free-tier friendly model
-      messages: [
-        {
-          role: 'system',
-          content: `أنت Care Circle، مساعد صوتي هادئ ولطيف لكبار السن في مصر.
-
-القواعد المهمة:
-- رد دائماً بالعامية المصرية البسيطة والواضحة.
-- استخدم جمل قصيرة وسهلة الفهم.
-- لا تعطِ أي تشخيص طبي أبداً.
-- لو الشخص طلب طلبية (لبن، عيش، دواء...) أكد الطلب وقول إنك هتساعد.
-- لو حس إن الشخص تعبان أو دوخان، انصحه بهدوء يتصل بالعيلة.
-- لو مش فاهم كويس، اطلب منه يعيد بهدوء.
-- خليك ودود ومحترم زي ابن أو بنت بيتكلم مع والده أو والدته.
-
-أمثلة على الردود:
-- "حاضر، عايز لبن؟ هرتبلك الطلب."
-- "طب تمام، قولي كمان مرة بهدوء."
-- "خد بالك من نفسك، لو حاسس بدوخة كلم حد من العيلة."
-`,
-        },
-        {
-          role: 'user',
-          content: userText,
-        },
-      ],
-      max_tokens: 150,
-      temperature: 0.6,
+  private async generateReply(userText: string, personalContext: string): Promise<string> {
+    const apiKey = this.getGroqApiKey();
+    const model = this.config.get<string>('GROQ_TEXT_MODEL') ?? 'openai/gpt-oss-20b';
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content: personalContext
+              ? `${CARE_CIRCLE_INSTRUCTIONS}\n\n${personalContext}`
+              : CARE_CIRCLE_INSTRUCTIONS,
+          },
+          { role: 'user', content: userText },
+        ],
+        reasoning_effort: 'low',
+        reasoning_format: 'hidden',
+        max_completion_tokens: 300,
+      }),
     });
 
-    return (
-      completion.choices[0]?.message?.content?.trim() ||
-      "آسف، لم أفهم ما قلته. هل يمكنك أن تعيد ذلك من فضلك؟"
-    );
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(`Groq GPT-OSS request failed (${response.status}): ${details}`);
+    }
+
+    const result = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string | null } }>;
+    };
+    const reply = result.choices?.[0]?.message?.content?.trim();
+
+    if (!reply) {
+      throw new Error('Groq GPT-OSS returned an empty reply');
+    }
+
+    return reply;
   }
+
 }

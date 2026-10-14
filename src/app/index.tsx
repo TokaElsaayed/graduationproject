@@ -118,7 +118,11 @@ export default function App() {
       });
 
       const responseText = await response.text();
-      let data: { transcript?: string; reply?: string; message?: string };
+      let data: {
+        transcript?: string;
+        reply?: string;
+        message?: string;
+      };
       try {
         data = responseText ? JSON.parse(responseText) : {};
       } catch {
@@ -133,7 +137,6 @@ export default function App() {
           setErrorMessage('The server processed the recording but did not return a reply.');
         }
 
-        // Speak the reply
         if (data.reply) {
           Speech.speak(data.reply, {
             language: /[\u0600-\u06FF]/.test(data.reply) ? 'ar' : 'en',
@@ -176,6 +179,12 @@ export default function App() {
           <Text style={styles.subtitle}>Voice Assistant</Text>
           <View style={styles.accountRow}>
             <Text style={styles.accountName}>Hello, {user.fullName}</Text>
+            <Pressable accessibilityRole="button" onPress={() => router.push('/profile')}>
+              <Text style={styles.signOut}>Profile</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" onPress={() => router.push('/reminders')}>
+              <Text style={styles.signOut}>Medicines</Text>
+            </Pressable>
             <Pressable accessibilityRole="button" onPress={() => router.push('/explore')}>
               <Text style={styles.signOut}>Demo plan</Text>
             </Pressable>

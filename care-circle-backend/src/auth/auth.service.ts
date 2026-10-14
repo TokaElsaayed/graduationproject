@@ -2,15 +2,14 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  OnModuleDestroy,
   OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Pool } from 'pg';
 import {
   createHmac,
   randomBytes,
+  randomUUID,
   scrypt as scryptCallback,
   timingSafeEqual,
 } from 'crypto';
@@ -29,27 +28,25 @@ const scrypt = promisify(scryptCallback) as (
 ) => Promise<Buffer>;
 const DEMO_PASSWORD = 'CareCircle123!';
 const DEMO_USERS: Array<{
+  id: string;
   fullName: string;
   email: string;
   role: AccountRole;
 }> = [
-  { fullName: 'Mariam Hassan', email: 'demo@carecircle.test', role: 'caregiver' },
-  { fullName: 'Mahmoud Hassan', email: 'olderadult@carecircle.test', role: 'older_adult' },
+  { id: 'demo-caregiver-001', fullName: 'Mariam Hassan', email: 'demo@carecircle.test', role: 'caregiver' },
+  { id: 'demo-older-adult-001', fullName: 'Mahmoud Hassan', email: 'olderadult@carecircle.test', role: 'older_adult' },
 ];
 
+interface StoredUser extends AuthUser {
+  passwordHash: string;
+}
+
 @Injectable()
-export class AuthService implements OnModuleInit, OnModuleDestroy {
-  private readonly pool: Pool;
+export class AuthService implements OnModuleInit {
+  private readonly users = new Map<string, StoredUser>();
   private readonly jwtSecret: string;
 
   constructor(config: ConfigService) {
-    this.pool = new Pool({
-      host: config.get<string>('DATABASE_HOST') ?? 'localhost',
-      port: Number(config.get<string>('DATABASE_PORT') ?? 5432),
-      user: config.get<string>('DATABASE_USER'),
-      password: config.get<string>('DATABASE_PASSWORD'),
-      database: config.get<string>('DATABASE_NAME'),
-    });
     const configuredSecret = config.get<string>('AUTH_JWT_SECRET');
     if (!configuredSecret && process.env.NODE_ENV === 'production') {
       throw new Error('AUTH_JWT_SECRET must be configured in production.');
@@ -59,32 +56,16 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit(): Promise<void> {
-    await this.pool.query(`
-      CREATE TABLE IF NOT EXISTS care_circle_users (
-        id BIGSERIAL PRIMARY KEY,
-        full_name VARCHAR(120) NOT NULL,
-        email VARCHAR(255) NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
-        role VARCHAR(24) NOT NULL CHECK (role IN ('caregiver', 'older_adult')),
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
+    if (!this.isDevelopment()) return;
 
-    if (this.isDevelopment()) {
-      for (const demoUser of DEMO_USERS) {
-        const passwordHash = await this.hashPassword(DEMO_PASSWORD);
-        await this.pool.query(
-          `INSERT INTO care_circle_users (full_name, email, password_hash, role)
-           VALUES ($1, $2, $3, $4)
-           ON CONFLICT (email) DO NOTHING`,
-          [demoUser.fullName, demoUser.email, passwordHash, demoUser.role],
-        );
-      }
+    for (const demoUser of DEMO_USERS) {
+      if (this.users.has(demoUser.email)) continue;
+      const passwordHash = await this.hashPassword(DEMO_PASSWORD);
+      this.users.set(demoUser.email, {
+        ...demoUser,
+        passwordHash,
+      });
     }
-  }
-
-  async onModuleDestroy(): Promise<void> {
-    await this.pool.end();
   }
 
   async signUp(input: {
@@ -112,34 +93,32 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
     }
 
     const passwordHash = await this.hashPassword(password);
-    try {
-      const result = await this.pool.query(
-        `INSERT INTO care_circle_users (full_name, email, password_hash, role)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, full_name, email, role`,
-        [fullName, email, passwordHash, role],
-      );
-      return this.createAuthResponse(this.toUser(result.rows[0]));
-    } catch (error) {
-      if ((error as { code?: string }).code === '23505') {
-        throw new ConflictException('An account with this email already exists.');
-      }
-      throw error;
+    if (this.users.has(email)) {
+      throw new ConflictException('An account with this email already exists.');
     }
+
+    const user: StoredUser = {
+      id: randomUUID(),
+      fullName,
+      email,
+      role,
+      passwordHash,
+    };
+    this.users.set(email, user);
+    return this.createAuthResponse(user);
   }
 
   async logIn(input: { email: string; password: string }): Promise<AuthResponse> {
     const email = input.email?.trim().toLowerCase();
-    const result = await this.pool.query(
-      `SELECT id, full_name, email, role, password_hash
-       FROM care_circle_users WHERE email = $1`,
-      [email],
-    );
-    const row = result.rows[0];
-    if (!row || !(await this.verifyPassword(input.password, row.password_hash))) {
+    const user = email ? this.users.get(email) : undefined;
+    if (
+      !user ||
+      typeof input.password !== 'string' ||
+      !(await this.verifyPassword(input.password, user.passwordHash))
+    ) {
       throw new UnauthorizedException('Email or password is incorrect.');
     }
-    return this.createAuthResponse(this.toUser(row));
+    return this.createAuthResponse(user);
   }
 
   userFromToken(token: string): AuthUser {
@@ -177,15 +156,21 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private createAuthResponse(user: AuthUser): AuthResponse {
+  private createAuthResponse(user: StoredUser): AuthResponse {
+    const authUser: AuthUser = {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+    };
     const now = Math.floor(Date.now() / 1000);
     const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
     const payload = Buffer.from(
-      JSON.stringify({ ...user, iat: now, exp: now + 60 * 60 * 24 * 7 }),
+      JSON.stringify({ ...authUser, iat: now, exp: now + 60 * 60 * 24 * 7 }),
     ).toString('base64url');
     const input = `${header}.${payload}`;
     const signature = createHmac('sha256', this.jwtSecret).update(input).digest('base64url');
-    return { accessToken: `${input}.${signature}`, user };
+    return { accessToken: `${input}.${signature}`, user: authUser };
   }
 
   private async hashPassword(password: string): Promise<string> {
@@ -200,20 +185,6 @@ export class AuthService implements OnModuleInit, OnModuleDestroy {
     const expected = Buffer.from(hashHex, 'hex');
     const actual = await scrypt(password, Buffer.from(saltHex, 'hex'), expected.length);
     return actual.length === expected.length && timingSafeEqual(actual, expected);
-  }
-
-  private toUser(row: {
-    id: string | number;
-    full_name: string;
-    email: string;
-    role: AccountRole;
-  }): AuthUser {
-    return {
-      id: String(row.id),
-      fullName: row.full_name,
-      email: row.email,
-      role: row.role,
-    };
   }
 
   private isDevelopment(): boolean {

@@ -26,6 +26,9 @@ export default function ExploreScreen() {
           <Pressable accessibilityRole="button" onPress={() => router.replace('/')}>
             <Text style={styles.action}>Voice assistant</Text>
           </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.push('/profile')}>
+            <Text style={styles.action}>Personal profile</Text>
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={async () => {
