@@ -188,6 +188,9 @@ export default function App() {
             <Pressable accessibilityRole="button" onPress={() => router.push('/explore')}>
               <Text style={styles.signOut}>Demo plan</Text>
             </Pressable>
+            <Pressable accessibilityRole="button" onPress={() => router.push('/family')}>
+              <Text style={styles.signOut}>Family dashboard</Text>
+            </Pressable>
             <Pressable
               accessibilityRole="button"
               onPress={async () => {

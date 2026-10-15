@@ -64,6 +64,7 @@ export const VoiceAssistantStyles = StyleSheet.create({
     width: '100%',
     marginTop: 16,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 14,
