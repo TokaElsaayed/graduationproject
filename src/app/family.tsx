@@ -7,13 +7,15 @@ import {
   initialEmergencies,
   initialNotifications,
   initialProfile,
+  getHealthChecksForPatient,
+  subscribeToHealthChecks,
   upcomingReminders,
   type DashboardDose,
   type DashboardNotification,
   type MockDoseStatus,
 } from '@/family-dashboard/mock-data';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -42,7 +44,7 @@ export default function FamilyDashboard() {
   const { width } = useWindowDimensions();
   const wide = width >= 900;
   const [section, setSection] = useState<Section>('Overview');
-  const [checkIns] = useState(initialCheckIns);
+  const [checkIns, setCheckIns] = useState(() => getHealthChecksForPatient(initialProfile.fullName));
   const [doses, setDoses] = useState(initialDoses);
   const [notifications, setNotifications] = useState(initialNotifications);
   const [profile, setProfile] = useState(initialProfile);
@@ -55,6 +57,10 @@ export default function FamilyDashboard() {
   const pending = doses.filter((dose) => dose.status === 'pending' || dose.status === 'postponed').length;
   const missed = doses.filter((dose) => dose.status === 'missed').length;
   const visibleDoses = useMemo(() => filter === 'all' ? doses : doses.filter((dose) => dose.status === filter), [doses, filter]);
+
+  useEffect(() => subscribeToHealthChecks(() => {
+    setCheckIns(getHealthChecksForPatient(profile.fullName));
+  }), [profile.fullName]);
 
   function changeDose(id: string, status: MockDoseStatus) {
     setDoses((items) => items.map((dose) => dose.id === id ? { ...dose, status, confirmedAt: status === 'taken' ? 'Just now · demo' : undefined } : dose));
@@ -154,8 +160,12 @@ function Overview({ checkIns, doses, taken, pending, missed, emergencies, onNavi
   checkIns: typeof initialCheckIns; doses: DashboardDose[]; taken: number; pending: number; missed: number; emergencies: typeof initialEmergencies; onNavigate: (item: Section) => void;
 }) {
   const today = checkIns[0];
+  const latestCompletedCheck = checkIns.find((check) => check.status === 'completed');
+  const healthCheckDetail = latestCompletedCheck
+    ? `${latestCompletedCheck.feeling ?? 'Feeling not recorded'} · ${latestCompletedCheck.sleptWell === 'Yes' ? 'Slept well' : latestCompletedCheck.sleptWell ? `Sleep: ${latestCompletedCheck.sleptWell.toLowerCase()}` : 'Sleep not recorded'}${latestCompletedCheck.pain ? ` · Pain: ${latestCompletedCheck.pain.toLowerCase()}` : ''}${latestCompletedCheck.breakfast ? ` · Breakfast: ${latestCompletedCheck.breakfast.toLowerCase()}` : ''}`
+    : 'No check-in recorded yet';
   const activities = [
-    { time: '8:15 AM', title: 'Morning health check completed', detail: 'Feeling good · Slept well', icon: '♡' },
+    { time: latestCompletedCheck?.time ?? '—', title: latestCompletedCheck ? 'Morning health check completed' : 'No morning health check yet', detail: healthCheckDetail, icon: '♡' },
     { time: doses.find((dose) => dose.status === 'taken')?.confirmedAt ?? '9:08 AM', title: 'Medication confirmed as taken', detail: 'Metformin · 500 mg', icon: '＋' },
     { time: 'Yesterday · 7:16 PM', title: 'Family message activity', detail: 'Omar sent a message', icon: '◉' },
   ];
@@ -164,7 +174,7 @@ function Overview({ checkIns, doses, taken, pending, missed, emergencies, onNavi
       <StatCard label="TODAY’S HEALTH CHECK" value={today?.status === 'completed' ? 'Completed' : 'Pending'} note={today?.time ? `Checked in at ${today.time}` : 'No check-in recorded'} tone="green" />
       <StatCard label="MEDICATION STATUS" value={`${taken} of ${doses.length} taken`} note={`${pending} pending · ${missed} missed`} tone="plum" />
       <StatCard label="EMERGENCY STATUS" value="No active events" note={`${emergencies.length} example events in history`} tone="amber" />
-      <StatCard label="LAST ACTIVITY" value="Health check" note="Today · 8:15 AM" tone="blue" />
+      <StatCard label="LAST ACTIVITY" value={latestCompletedCheck ? 'Health check' : 'No check-in'} note={latestCompletedCheck ? `${latestCompletedCheck.date} · ${latestCompletedCheck.time}` : 'Nothing recorded yet'} tone="blue" />
     </View>
     <View style={styles.columns}>
       <Card style={styles.columnCard}>

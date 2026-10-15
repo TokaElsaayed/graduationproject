@@ -3,8 +3,11 @@ export type MockDoseStatus = 'taken' | 'pending' | 'postponed' | 'missed';
 
 export interface HealthCheck {
   id: string;
+  userId: string;
+  patientName: string;
   date: string;
   time: string;
+  completedAt?: string;
   status: CheckInStatus;
   feeling?: string;
   sleptWell?: string;
@@ -53,10 +56,62 @@ export interface DashboardNotification {
 
 // Fictional sample data for the caregiver dashboard. Nothing here is live health data.
 export const initialCheckIns: HealthCheck[] = [
-  { id: 'check-today', date: 'Today', time: '8:15 AM', status: 'completed', feeling: 'Good', sleptWell: 'Yes', pain: 'No', breakfast: 'Yes' },
-  { id: 'check-yesterday', date: 'Yesterday', time: '8:32 AM', status: 'completed', feeling: 'Okay', sleptWell: 'Yes', pain: 'A little', breakfast: 'Yes' },
-  { id: 'check-two-days', date: 'Monday, Oct 12', time: '—', status: 'not-completed' },
+  { id: 'check-today', userId: 'demo-older-adult-001', patientName: 'Mahmoud Hassan', date: 'Today', time: '8:15 AM', status: 'completed', feeling: 'Fine', sleptWell: 'Yes', pain: 'No', breakfast: 'Yes' },
+  { id: 'check-yesterday', userId: 'demo-older-adult-001', patientName: 'Mahmoud Hassan', date: 'Yesterday', time: '8:32 AM', status: 'completed', feeling: 'Not quite right', sleptWell: 'Yes', pain: 'A little', breakfast: 'Yes' },
+  { id: 'check-two-days', userId: 'demo-older-adult-001', patientName: 'Mahmoud Hassan', date: 'Monday, Oct 12', time: '—', status: 'not-completed' },
 ];
+
+// Session-only mock storage. Entries disappear when the app process restarts.
+const healthCheckStore: HealthCheck[] = [...initialCheckIns];
+const healthCheckListeners = new Set<() => void>();
+
+export function getHealthChecksForPatient(patientName: string): HealthCheck[] {
+  return healthCheckStore
+    .filter((check) => check.patientName === patientName)
+    .slice()
+    .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''));
+}
+
+export function subscribeToHealthChecks(listener: () => void): () => void {
+  healthCheckListeners.add(listener);
+  return () => healthCheckListeners.delete(listener);
+}
+
+export function saveHealthCheck(input: {
+  userId: string;
+  patientName: string;
+  feeling: string;
+  sleptWell: string;
+  pain: string;
+  breakfast: string;
+}): HealthCheck {
+  const completedAt = new Date().toISOString();
+  const date = new Intl.DateTimeFormat('en', {
+    dateStyle: 'medium',
+    timeZone: 'Africa/Cairo',
+  }).format(new Date(completedAt));
+  const time = new Intl.DateTimeFormat('en', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'Africa/Cairo',
+  }).format(new Date(completedAt));
+  const check: HealthCheck = {
+    id: `check-${completedAt}`,
+    userId: input.userId,
+    patientName: input.patientName,
+    date,
+    time,
+    completedAt,
+    status: 'completed',
+    feeling: input.feeling,
+    sleptWell: input.sleptWell,
+    pain: input.pain,
+    breakfast: input.breakfast,
+  };
+  healthCheckStore.unshift(check);
+  healthCheckListeners.forEach((listener) => listener());
+  return check;
+}
 
 export const initialDoses: DashboardDose[] = [
   { id: 'dose-metformin-am', medication: 'Metformin', instructions: '500 mg · with food', time: '9:00 AM', status: 'taken', confirmedAt: '9:08 AM' },
