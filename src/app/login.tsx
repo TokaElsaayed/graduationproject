@@ -46,7 +46,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await logIn('olderadult@carecircle.test', 'CareCircle123!');
-      router.replace('/profile');
+      router.replace('/health-check');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not sign in. Try again.');
     } finally {

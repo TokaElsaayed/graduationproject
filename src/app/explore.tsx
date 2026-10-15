@@ -4,9 +4,9 @@ import { useAuth } from '@/auth/auth-context';
 import { Palette } from '@/constants/theme';
 
 const demoCheckIns = [
-  { time: '9:00 AM', person: 'Mariam Hassan', note: 'Morning check-in', status: 'Completed' },
-  { time: '1:00 PM', person: 'Mahmoud Hassan', note: 'Lunch and water reminder', status: 'Coming up' },
-  { time: '6:30 PM', person: 'Omar Hassan', note: 'Evening family call', status: 'Planned' },
+  { time: '9:00 AM', title: 'Your morning health check', note: 'A few simple questions about how you feel', status: 'Ready' },
+  { time: '1:00 PM', title: 'Lunch and water reminder', note: 'Remember to have lunch and a drink of water', status: 'Coming up' },
+  { time: '6:30 PM', title: 'Family call', note: 'A planned time to catch up with family', status: 'Planned' },
 ];
 
 export default function ExploreScreen() {
@@ -20,12 +20,21 @@ export default function ExploreScreen() {
     <ScrollView contentContainerStyle={styles.page}>
       <View style={styles.header}>
         <Text style={styles.brand}>Care Circle</Text>
-        <Text style={styles.title}>Today’s care plan</Text>
-        <Text style={styles.subtitle}>Sample information for exploring the app.</Text>
+        <Text style={styles.title}>{user.role === 'older_adult' ? 'My day' : 'Today’s care plan'}</Text>
+        <Text style={styles.subtitle}>
+          {user.role === 'older_adult'
+            ? `A simple example of your day, ${user.fullName.split(' ')[0]}.`
+            : 'Example activities for the older adult’s care plan.'}
+        </Text>
         <View style={styles.headerActions}>
           <Pressable accessibilityRole="button" onPress={() => router.replace('/')}>
-            <Text style={styles.action}>Voice assistant</Text>
+            <Text style={styles.action}>Home</Text>
           </Pressable>
+          {user.role === 'older_adult' ? (
+            <Pressable accessibilityRole="button" onPress={() => router.push('/health-check')}>
+              <Text style={styles.action}>Start health check</Text>
+            </Pressable>
+          ) : null}
           <Pressable accessibilityRole="button" onPress={() => router.push('/profile')}>
             <Text style={styles.action}>Personal profile</Text>
           </Pressable>
@@ -41,17 +50,30 @@ export default function ExploreScreen() {
         </View>
       </View>
       <View style={styles.notice}>
-        <Text style={styles.noticeText}>Demo data · These reminders are examples, not saved appointments.</Text>
+        <Text style={styles.noticeText}>Example schedule · These reminders are demo information, not saved appointments.</Text>
       </View>
       {demoCheckIns.map((item) => (
-        <View key={`${item.time}-${item.person}`} style={styles.card}>
+        <Pressable
+          key={`${item.time}-${item.title}`}
+          accessibilityRole={item.time === '9:00 AM' ? 'button' : undefined}
+          accessibilityLabel={item.time === '9:00 AM' ? `${item.title}, ${item.status}` : undefined}
+          accessibilityHint={item.time === '9:00 AM'
+            ? user.role === 'older_adult' ? 'Opens your morning health check' : 'Opens the family dashboard'
+            : undefined}
+          onPress={item.time === '9:00 AM'
+            ? () => router.push(user.role === 'older_adult' ? '/health-check' : '/family')
+            : undefined}
+          style={({ pressed }) => [styles.card, pressed && item.time === '9:00 AM' && styles.cardPressed]}
+        >
           <Text style={styles.time}>{item.time}</Text>
           <View style={styles.details}>
-            <Text style={styles.person}>{item.person}</Text>
+            <Text style={styles.person}>{user.role === 'older_adult' ? item.title : item.title.replace('Your ', 'Family member’s ')}</Text>
             <Text style={styles.note}>{item.note}</Text>
           </View>
-          <Text style={styles.status}>{item.status}</Text>
-        </View>
+          <Text style={styles.status}>{item.time === '9:00 AM'
+            ? user.role === 'older_adult' ? 'Start' : 'Open'
+            : item.status}</Text>
+        </Pressable>
       ))}
     </ScrollView>
   );
@@ -93,6 +115,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
   },
+  cardPressed: { backgroundColor: '#F3E8E4', borderColor: Palette.primary },
   time: { color: Palette.primary, fontWeight: '700', minWidth: 68 },
   details: { flex: 1 },
   person: { color: Palette.text, fontWeight: '700', fontSize: 15 },

@@ -186,11 +186,18 @@ export default function App() {
               <Text style={styles.signOut}>Medicines</Text>
             </Pressable>
             <Pressable accessibilityRole="button" onPress={() => router.push('/explore')}>
-              <Text style={styles.signOut}>Demo plan</Text>
+              <Text style={styles.signOut}>{user.role === 'older_adult' ? 'My day' : 'Care plan'}</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" onPress={() => router.push('/family')}>
-              <Text style={styles.signOut}>Family dashboard</Text>
-            </Pressable>
+            {user.role === 'caregiver' ? (
+              <Pressable accessibilityRole="button" onPress={() => router.push('/family')}>
+                <Text style={styles.signOut}>Family dashboard</Text>
+              </Pressable>
+            ) : null}
+            {user.role === 'older_adult' ? (
+              <Pressable accessibilityRole="button" onPress={() => router.push('/health-check')}>
+                <Text style={styles.signOut}>Morning health check</Text>
+              </Pressable>
+            ) : null}
             <Pressable
               accessibilityRole="button"
               onPress={async () => {
