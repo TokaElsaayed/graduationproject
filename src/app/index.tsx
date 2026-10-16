@@ -12,10 +12,29 @@ import {
 } from 'react-native';
 import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
+import * as Linking from 'expo-linking';
 import { Palette, VoiceAssistantStyles as styles } from '@/constants/theme';
 import { Redirect, useRouter } from 'expo-router';
 import { useAuth } from '@/auth/auth-context';
 import { API_BASE_URL } from '@/config/api';
+import { profileRequest, type EmergencyContact } from '@/profile/profile-api';
+
+type VoiceEmotion = {
+  label: 'happy' | 'sad' | 'angry' | 'neutral' | 'uncertain';
+  confidence: number;
+};
+
+const emotionLabels: Record<VoiceEmotion['label'], string> = {
+  happy: 'Possibly happy',
+  sad: 'Possibly sad',
+  angry: 'Possibly frustrated',
+  neutral: 'No clear emotional tone',
+  uncertain: 'Could not tell',
+};
+const EMOTION_SUPPORT_THRESHOLD = 0.4;
+const SAD_FAMILY_CALL_QUESTION = '\u0635\u0648\u062a\u0643 \u0628\u0627\u064a\u0646 \u0639\u0644\u064a\u0647 \u062d\u0632\u064a\u0646 \u0634\u0648\u064a\u0629\u060c \u0648\u0645\u0645\u0643\u0646 \u0623\u0643\u0648\u0646 \u063a\u0644\u0637\u0627\u0646. \u062a\u062d\u0628 \u0623\u0643\u0644\u0645 \u062d\u062f \u0645\u0646 \u0639\u064a\u0644\u062a\u0643\u061f';
+const TIRED_FAMILY_CALL_QUESTION_EN = 'You mentioned feeling tired. Would you like me to help you contact a family member?';
+const TIRED_FAMILY_CALL_QUESTION_AR = '\u0642\u0644\u062a \u0625\u0646\u0643 \u062a\u0639\u0628\u0627\u0646. \u062a\u062d\u0628 \u0623\u0633\u0627\u0639\u062f\u0643 \u062a\u0643\u0644\u0645 \u062d\u062f \u0645\u0646 \u0639\u064a\u0644\u062a\u0643\u061f';
 
 export default function App() {
   const router = useRouter();
@@ -29,12 +48,18 @@ export default function App() {
   const [transcript, setTranscript] = useState('');
   const [reply, setReply] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [emotion, setEmotion] = useState<VoiceEmotion | null>(null);
+  const [familyContact, setFamilyContact] = useState<EmergencyContact | null>(null);
+  const [isLoadingFamilyContact, setIsLoadingFamilyContact] = useState(false);
+  const [showFamilyOffer, setShowFamilyOffer] = useState(false);
+  const [familyOfferReason, setFamilyOfferReason] = useState<'sad' | 'tired' | null>(null);
 
   // ⚠️ Change this to your computer's IP address
   const BACKEND_URL = `${API_BASE_URL}/voice/process`;
 
   if (!isReady) return null;
   if (!user || !token) return <Redirect href="/login" />;
+  const authToken = token;
 
   // Start recording
   async function startRecording() {
@@ -60,6 +85,11 @@ export default function App() {
       setTranscript('');
       setReply('');
       setErrorMessage('');
+      setEmotion(null);
+      setFamilyContact(null);
+      setIsLoadingFamilyContact(false);
+      setShowFamilyOffer(false);
+      setFamilyOfferReason(null);
     } catch (err) {
       console.error('Failed to start recording', err);
       alert('Could not start recording');
@@ -121,6 +151,7 @@ export default function App() {
       let data: {
         transcript?: string;
         reply?: string;
+        emotion?: VoiceEmotion;
         message?: string;
       };
       try {
@@ -132,14 +163,43 @@ export default function App() {
       if (response.ok) {
         setTranscript(data.transcript || '');
         setReply(data.reply || '');
+        setEmotion(data.emotion ?? null);
+        const transcriptText = data.transcript || '';
+        const sadEstimate = data.emotion?.label === 'sad'
+          && data.emotion.confidence >= EMOTION_SUPPORT_THRESHOLD;
+        const tiredMentioned = /\b(tired|exhausted|fatigued)\b|تعبان|تعبانة|مرهق|مرهقة|إرهاق/i.test(transcriptText);
+        const offerReason = sadEstimate ? 'sad' : tiredMentioned ? 'tired' : null;
+        const shouldOfferCall = offerReason !== null;
+        setShowFamilyOffer(shouldOfferCall);
+        setFamilyOfferReason(offerReason);
+
+        if (shouldOfferCall) {
+          setIsLoadingFamilyContact(true);
+          try {
+            const contacts = await profileRequest<EmergencyContact[]>(authToken, '/profiles/me/contacts');
+            setFamilyContact(contacts.find((contact) => contact.isPrimary) ?? contacts[0] ?? null);
+          } catch {
+            setFamilyContact(null);
+          } finally {
+            setIsLoadingFamilyContact(false);
+          }
+        }
 
         if (!data.reply) {
           setErrorMessage('The server processed the recording but did not return a reply.');
         }
 
         if (data.reply) {
-          Speech.speak(data.reply, {
-            language: /[\u0600-\u06FF]/.test(data.reply) ? 'ar' : 'en',
+          const familyQuestion = offerReason === 'sad'
+            ? SAD_FAMILY_CALL_QUESTION
+            : offerReason === 'tired'
+              ? (/[؀-ۿ]/.test(transcriptText) ? TIRED_FAMILY_CALL_QUESTION_AR : TIRED_FAMILY_CALL_QUESTION_EN)
+              : '';
+          const spokenReply = familyQuestion
+            ? `${data.reply} ${familyQuestion}`
+            : data.reply;
+          Speech.speak(spokenReply, {
+            language: /[\u0600-\u06FF]/.test(spokenReply) ? 'ar' : 'en',
             pitch: 1.0,
             rate: 0.9,
           });
@@ -156,6 +216,21 @@ export default function App() {
       );
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function openFamilyCall() {
+    if (!familyContact) {
+      setShowFamilyOffer(false);
+      router.push('/profile');
+      return;
+    }
+
+    const phoneNumber = familyContact.phone.replace(/[^\d+]/g, '');
+    try {
+      await Linking.openURL(`tel:${phoneNumber}`);
+    } catch {
+      setErrorMessage('Could not open the phone app. Check the contact number and try again.');
     }
   }
 
@@ -236,6 +311,39 @@ export default function App() {
               <View nativeID="voice-glass-card" style={[styles.message, styles.assistantMessage]}>
                 <Text style={[styles.label, styles.assistantLabel]}>Care Circle</Text>
                 <Text style={[styles.text, styles.assistantText]}>{reply}</Text>
+              </View>
+            ) : null}
+
+            {emotion ? (
+              <View nativeID="voice-glass-card" style={styles.message}>
+                <Text style={styles.label}>Voice tone estimate</Text>
+                <Text style={styles.text}>{emotionLabels[emotion.label]} ({Math.round(emotion.confidence * 100)}% model score)</Text>
+                <Text style={{ color: '#68605E', fontSize: 13, lineHeight: 19, marginTop: 6 }}>
+                  Experimental tone estimate only. It supports happy, sad, angry, and neutral, and may be wrong. Tiredness is only noticed when you say you feel tired; this is not a health assessment. A family support prompt may appear for a sad estimate at 40% confidence or higher.
+                </Text>
+              </View>
+            ) : null}
+
+            {showFamilyOffer ? (
+              <View nativeID="voice-glass-card" style={[styles.message, styles.assistantMessage]}>
+                <Text style={[styles.label, styles.assistantLabel]}>Would you like to call a family member?</Text>
+                <Text style={styles.text}>
+                  {familyOfferReason === 'tired'
+                    ? 'You mentioned feeling tired. Would you like help contacting family?'
+                    : 'Your voice may sound a little sad to me. I may be mistaken.'}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => void openFamilyCall()}
+                  disabled={isLoadingFamilyContact}
+                  style={{ backgroundColor: Palette.primary, borderRadius: 12, padding: 12, marginTop: 12, opacity: isLoadingFamilyContact ? 0.6 : 1 }}>
+                  <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700', textAlign: 'center' }}>
+                    {isLoadingFamilyContact ? 'Finding saved contact...' : familyContact ? `Call ${familyContact.name}` : 'Add a family contact'}
+                  </Text>
+                </Pressable>
+                <Pressable accessibilityRole="button" onPress={() => setShowFamilyOffer(false)} style={{ padding: 10, alignSelf: 'center' }}>
+                  <Text style={{ color: Palette.primary, fontSize: 15, fontWeight: '700' }}>Not now</Text>
+                </Pressable>
               </View>
             ) : null}
 

@@ -15,6 +15,8 @@ Sign-ups are also stored in memory and will be lost when the backend stops. Pass
 
 The voice flow sends recordings to the local ASR service, sends the transcript to Groq for a text reply, and uses Expo Speech on the device to speak the reply. There is no separate TTS server.
 
+The ASR service also estimates vocal tone with `superb/wav2vec2-base-superb-er`. On first start, Transformers downloads this model (about 378 MB). It returns happy, sad, angry, neutral, or uncertain; it does not detect tiredness or general health. The model was trained primarily on English speech, so Egyptian Arabic estimates are experimental and can be wrong. A sad estimate only shows a suggestion to call the saved primary family contact; the app opens the phone app only after the user taps the call button. If the tone model cannot load or fails on a recording, transcription and the voice assistant continue with an uncertain estimate.
+
 ## Medicine reminders
 
 The scheduler reads medication schedules from the profile module's existing in-memory `MedicationsRepository`. It creates dose history and family alerts in memory and schedules medication jobs in `Africa/Cairo`. Editing, adding, or deleting a profile medication refreshes its scheduler jobs.
