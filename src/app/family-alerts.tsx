@@ -41,8 +41,8 @@ export default function FamilyAlertsScreen() {
     <View style={styles.content}>
       <Text style={styles.brand}>Care Circle</Text>
       <Text style={styles.title}>Family Alerts</Text>
-      <Pressable accessibilityRole="button" onPress={() => router.push('/reminders')}><Text style={styles.link}>Back to medicines</Text></Pressable>
-      <Text style={styles.notice}>These demo alerts are stored in the server’s memory.</Text>
+      <Pressable accessibilityRole="button" onPress={() => router.push('/reminders')} style={styles.backButton}><Text style={styles.link}>Back to medicines</Text></Pressable>
+      <Text style={styles.notice}>Demo alerts may reset when the server restarts.</Text>
       {loading ? <ActivityIndicator size="large" color={Palette.primary} /> : null}
       {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
       {!loading && alerts.length === 0 ? <Text style={styles.empty}>There are no missed doses.</Text> : null}
@@ -69,13 +69,14 @@ const styles = StyleSheet.create({
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', gap: 15 },
   brand: { color: Palette.primary, fontSize: 17, fontWeight: '700' },
   title: { color: Palette.primary, fontSize: 34, fontWeight: '900' },
-  link: { color: Palette.primary, fontSize: 17, fontWeight: '800', textDecorationLine: 'underline' },
+  backButton: { minHeight: 48, justifyContent: 'center', alignSelf: 'flex-start' },
+  link: { color: Palette.primary, fontSize: 17, fontWeight: '700' },
   notice: { color: Palette.text, fontSize: 16 },
-  error: { color: '#8D1724', fontSize: 16, padding: 12, backgroundColor: '#FDE8E8', borderRadius: 12 },
-  empty: { color: Palette.text, fontSize: 20, textAlign: 'center', padding: 20, backgroundColor: '#FFF9F6', borderRadius: 16 },
-  card: { backgroundColor: '#FFF9F6', borderWidth: 1, borderColor: '#D2BEB9', borderRadius: 17, padding: 18, gap: 10 },
-  message: { color: '#8D1724', fontSize: 21, lineHeight: 32, fontWeight: '800' },
-  time: { color: '#514946', fontSize: 15 },
+  error: { color: Palette.primary, fontSize: 16, padding: 12, backgroundColor: Palette.background, borderRadius: 12 },
+  empty: { color: Palette.text, fontSize: 20, textAlign: 'center', padding: 20, backgroundColor: Palette.white, borderRadius: 16 },
+  card: { backgroundColor: Palette.white, borderWidth: 1, borderColor: Palette.muted, borderRadius: 17, padding: 18, gap: 10 },
+  message: { color: Palette.primary, fontSize: 21, lineHeight: 32, fontWeight: '800' },
+  time: { color: Palette.text, fontSize: 15 },
   membersTitle: { color: Palette.text, fontSize: 17, fontWeight: '800' },
   member: { color: Palette.text, fontSize: 16, lineHeight: 25 },
 });

@@ -1,15 +1,24 @@
 :root {
   color-scheme: light;
-  --primary: #702a39;
-  --secondary: #b9c1c3;
-  --background: #faeeea;
-  --text: #232323;
-  --surface: #faeeea;
+  --primary: #52677d;
+  --primary-hover: #495c70;
+  --secondary: #bdc4d4;
+  --dark-accent: #0f1a2b;
+  --background: #f8f9fb;
+  --text: var(--dark-accent);
+  --surface: #ffffff;
+  --white: #ffffff;
+  --success: #4caf50;
+  --warning: #f4b400;
+  --error: #e53935;
+  --muted: #7c8796;
+  --border: rgba(82, 103, 125, 0.15);
+  --card-shadow: 0 8px 24px rgba(15, 26, 43, 0.08);
   --text-primary: var(--text);
-  --text-secondary: #232323;
+  --text-secondary: var(--primary);
   --app-gradient:
-    radial-gradient(ellipse at 78% 18%, rgba(112, 42, 57, 0.12) 0%, transparent 44%),
-    linear-gradient(180deg, #b9c1c3 0%, #faeeea 48%, #faeeea 100%);
+    radial-gradient(ellipse at 78% 18%, rgba(82, 103, 125, 0.12) 0%, transparent 44%),
+    linear-gradient(180deg, var(--secondary) 0%, var(--background) 48%, var(--background) 100%);
 
   --font-display:
     Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,

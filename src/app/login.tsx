@@ -13,14 +13,14 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   if (!isReady) return null;
-  if (user) return <Redirect href="/" />;
+  if (user) return <Redirect href={user.role === 'older_adult' ? '/health-check?dailyFlow=1' : '/'} />;
 
   async function submit() {
     setError('');
     setLoading(true);
     try {
-      await logIn(email, password);
-      router.replace('/');
+      const signedInUser = await logIn(email, password);
+      router.replace(signedInUser.role === 'older_adult' ? '/health-check?dailyFlow=1' : '/');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not sign in. Try again.');
     } finally {
@@ -46,7 +46,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await logIn('olderadult@carecircle.test', 'CareCircle123!');
-      router.replace('/health-check');
+      router.replace('/health-check?dailyFlow=1');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not sign in. Try again.');
     } finally {
@@ -63,7 +63,7 @@ export default function LoginScreen() {
       <View style={authStyles.card}>
         <Text style={authStyles.brand}>Care Circle</Text>
         <Text style={authStyles.title}>Welcome back</Text>
-        <Text style={authStyles.subtitle}>Sign in to continue to your voice assistant.</Text>
+        <Text style={authStyles.subtitle}>Sign in to continue.</Text>
 
         {error ? <Text accessibilityRole="alert" style={authStyles.error}>{error}</Text> : null}
 

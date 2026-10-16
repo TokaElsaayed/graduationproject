@@ -53,7 +53,7 @@ function DueReminderNavigation() {
         const reminderKey = `${due.id}:${due.reminderCount}`;
         if (reminderKey === openedReminder.current) return;
         openedReminder.current = reminderKey;
-        if (pathname !== '/reminders') router.push('/reminders');
+        if (pathname !== '/reminders' && pathname !== '/health-check' && pathname !== '/login') router.push('/reminders');
       } catch {
         // The reminder screen surfaces connection errors if the API is unavailable.
       }

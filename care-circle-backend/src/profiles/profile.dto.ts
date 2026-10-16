@@ -87,7 +87,7 @@ export class EmergencyContactDto {
   @MaxLength(60)
   relationship!: string;
 
-  @IsPhoneNumber()
+  @IsPhoneNumber('EG')
   phone!: string;
 
   @IsBoolean()
@@ -111,7 +111,7 @@ export class UpdateEmergencyContactDto {
   relationship?: string;
 
   @IsOptional()
-  @IsPhoneNumber()
+  @IsPhoneNumber('EG')
   phone?: string;
 
   @IsOptional()

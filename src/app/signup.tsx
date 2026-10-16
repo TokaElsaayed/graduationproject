@@ -23,7 +23,7 @@ export default function SignupScreen() {
     setLoading(true);
     try {
       await signUp({ fullName, email, password, role });
-      router.replace('/');
+      router.replace(role === 'older_adult' ? '/care-setup' : '/');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not create your account.');
     } finally {
@@ -40,7 +40,7 @@ export default function SignupScreen() {
       <View style={authStyles.card}>
         <Text style={authStyles.brand}>Care Circle</Text>
         <Text style={authStyles.title}>Create your account</Text>
-        <Text style={authStyles.subtitle}>A little support, whenever you need it.</Text>
+        <Text style={authStyles.subtitle}>Set up your account.</Text>
 
         {error ? <Text accessibilityRole="alert" style={authStyles.error}>{error}</Text> : null}
 

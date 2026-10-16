@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { ProfileModule } from './profiles/profile.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RemindersModule } from './reminders/reminders.module';
+import { FamilyModule } from './family/family.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { RemindersModule } from './reminders/reminders.module';
     AuthModule,
     ProfileModule,
     RemindersModule,
+    FamilyModule,
     VoiceModule,
   ],
 })

@@ -31,8 +31,8 @@ export default function DoseHistoryScreen() {
   return <ScrollView contentContainerStyle={styles.page}>
     <View style={styles.content}>
       <Text style={styles.brand}>Care Circle</Text>
-      <Text style={styles.title}>Dose History</Text>
-      <Pressable accessibilityRole="button" onPress={() => router.push('/reminders')}><Text style={styles.link}>Back to medicines</Text></Pressable>
+      <Text style={styles.title}>Medicine History</Text>
+      <Pressable accessibilityRole="button" onPress={() => router.push('/reminders')} style={styles.backButton}><Text style={styles.link}>Back to medicines</Text></Pressable>
       {loading ? <ActivityIndicator size="large" color={Palette.primary} /> : null}
       {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
       {!loading && history.length === 0 ? <Text style={styles.empty}>There are no doses in the history yet.</Text> : null}
@@ -54,13 +54,14 @@ const styles = StyleSheet.create({
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', gap: 15 },
   brand: { color: Palette.primary, fontSize: 17, fontWeight: '700' },
   title: { color: Palette.primary, fontSize: 34, fontWeight: '900' },
-  link: { color: Palette.primary, fontSize: 17, fontWeight: '800', textDecorationLine: 'underline' },
-  error: { color: '#8D1724', fontSize: 16, padding: 12, backgroundColor: '#FDE8E8', borderRadius: 12 },
-  empty: { color: Palette.text, fontSize: 20, textAlign: 'center', padding: 20, backgroundColor: '#FFF9F6', borderRadius: 16 },
-  card: { backgroundColor: '#FFF9F6', borderWidth: 1, borderColor: '#D2BEB9', borderRadius: 17, padding: 18, gap: 9 },
+  backButton: { minHeight: 48, justifyContent: 'center', alignSelf: 'flex-start' },
+  link: { color: Palette.primary, fontSize: 17, fontWeight: '700' },
+  error: { color: Palette.primary, fontSize: 16, padding: 12, backgroundColor: Palette.background, borderRadius: 12 },
+  empty: { color: Palette.text, fontSize: 20, textAlign: 'center', padding: 20, backgroundColor: Palette.white, borderRadius: 16 },
+  card: { backgroundColor: Palette.white, borderWidth: 1, borderColor: Palette.muted, borderRadius: 17, padding: 18, gap: 9 },
   medicine: { color: Palette.text, fontSize: 20, fontWeight: '800' },
-  detail: { color: '#514946', fontSize: 16 },
+  detail: { color: Palette.text, fontSize: 16 },
   status: { color: Palette.primary, fontSize: 17, fontWeight: '800' },
-  missed: { color: '#9E2430' },
-  taken: { color: '#176B45' },
+  missed: { color: Palette.primary },
+  taken: { color: Palette.success },
 });

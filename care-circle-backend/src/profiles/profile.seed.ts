@@ -36,4 +36,10 @@ export const PROFILE_SEED: ProfileSeed = {
       canViewDashboard: true,
     },
   ],
+  caregiverLinks: [
+    {
+      caregiverUserId: 'demo-caregiver-001',
+      olderAdultUserId: 'demo-older-adult-001',
+    },
+  ],
 };

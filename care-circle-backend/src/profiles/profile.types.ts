@@ -27,4 +27,10 @@ export interface ProfileSeed {
   profiles: ElderlyProfile[];
   medications: Medication[];
   contacts: EmergencyContact[];
+  caregiverLinks: CaregiverLink[];
+}
+
+export interface CaregiverLink {
+  caregiverUserId: string;
+  olderAdultUserId: string;
 }

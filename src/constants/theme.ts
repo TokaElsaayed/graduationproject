@@ -8,14 +8,33 @@ import '@/global.css';
 import { Platform, StyleSheet } from 'react-native';
 
 export const Palette = {
-  primary: '#702A39',
-  secondary: '#B9C1C3',
-  background: '#FAEEEA',
-  text: '#232323',
-  surface: '#FAEEEA',
-  border: '#B9C1C3',
-  helper: '#232323',
-  dark: '#232323',
+  primary: '#52677D',
+  primaryHover: '#495C70',
+  secondary: '#BDC4D4',
+  secondarySurface: 'rgba(189, 196, 212, 0.22)',
+  background: '#F8F9FB',
+  text: '#0F1A2B',
+  textSecondary: '#52677D',
+  muted: '#7C8796',
+  surface: '#FFFFFF',
+  white: '#FFFFFF',
+  white72: 'rgba(255, 255, 255, 0.72)',
+  white75: 'rgba(255, 255, 255, 0.75)',
+  white76: 'rgba(255, 255, 255, 0.76)',
+  white77: 'rgba(255, 255, 255, 0.77)',
+  white87: 'rgba(255, 255, 255, 0.87)',
+  white90: 'rgba(255, 255, 255, 0.9)',
+  white94: 'rgba(255, 255, 255, 0.94)',
+  border: 'rgba(82, 103, 125, 0.15)',
+  shadow: 'rgba(15, 26, 43, 0.08)',
+  helper: '#7C8796',
+  dark: '#0F1A2B',
+  success: '#4CAF50',
+  successSurface: 'rgba(76, 175, 80, 0.12)',
+  warning: '#F4B400',
+  warningSurface: 'rgba(244, 180, 0, 0.16)',
+  error: '#E53935',
+  errorSurface: 'rgba(229, 57, 53, 0.10)',
 } as const;
 
 export const Colors = {
@@ -24,14 +43,14 @@ export const Colors = {
     background: Palette.background,
     backgroundElement: Palette.surface,
     backgroundSelected: Palette.primary,
-    textSecondary: Palette.text,
+    textSecondary: Palette.textSecondary,
   },
   dark: {
     text: Palette.text,
     background: Palette.background,
     backgroundElement: Palette.surface,
     backgroundSelected: Palette.primary,
-    textSecondary: Palette.text,
+    textSecondary: Palette.textSecondary,
   },
 } as const;
 
@@ -41,7 +60,7 @@ export const VoiceAssistantStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Palette.background,
-    experimental_backgroundImage: 'linear-gradient(180deg, #B9C1C3 0%, #FAEEEA 48%, #FAEEEA 100%)',
+    experimental_backgroundImage: `linear-gradient(180deg, ${Palette.secondary} 0%, ${Palette.background} 48%, ${Palette.background} 100%)`,
   },
   pageScroll: {
     flex: 1,
@@ -128,7 +147,7 @@ export const VoiceAssistantStyles = StyleSheet.create({
     flexShrink: 1,
   },
   message: {
-    backgroundColor: 'rgba(250, 238, 234, 0.94)',
+    backgroundColor: Palette.white94,
     padding: 16,
     borderRadius: 18,
     marginBottom: 12,
@@ -191,7 +210,7 @@ export const VoiceAssistantStyles = StyleSheet.create({
     padding: 3,
     alignItems: 'center',
     justifyContent: 'center',
-    experimental_backgroundImage: 'linear-gradient(135deg, #702A39, #B9C1C3)',
+    experimental_backgroundImage: `linear-gradient(135deg, ${Palette.primary}, ${Palette.dark})`,
     shadowColor: Palette.primary,
     shadowOpacity: 0.5,
     shadowRadius: 24,

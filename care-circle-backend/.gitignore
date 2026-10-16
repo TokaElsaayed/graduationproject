@@ -3,6 +3,7 @@
 /node_modules
 /\.venv/
 /.venv-tts/
+/output.wav
 /__pycache__/
 /build
 

@@ -1,7 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PROFILE_SEED } from './profile.seed';
-import type { ElderlyProfile, EmergencyContact, Medication } from './profile.types';
+import type { CaregiverLink, ElderlyProfile, EmergencyContact, Medication } from './profile.types';
+
+@Injectable()
+export class CaregiverLinksRepository {
+  private readonly records = new Map<string, CaregiverLink>(
+    PROFILE_SEED.caregiverLinks.map((link) => [link.caregiverUserId, { ...link }]),
+  );
+
+  findOlderAdultId(caregiverUserId: string): string | undefined {
+    return this.records.get(caregiverUserId)?.olderAdultUserId;
+  }
+}
 
 @Injectable()
 export class UsersRepository {

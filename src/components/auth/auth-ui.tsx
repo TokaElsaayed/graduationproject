@@ -26,32 +26,39 @@ export const authStyles = StyleSheet.create({
     width: '100%',
     maxWidth: 440,
     alignSelf: 'center',
-    backgroundColor: '#FFF9F6',
-    borderRadius: 28,
-    padding: 26,
+    backgroundColor: Palette.white,
+    borderRadius: 22,
+    padding: 20,
     borderWidth: 1,
-    borderColor: '#E9D9D4',
+    borderColor: Palette.background,
   },
   brand: {
     color: Palette.primary,
     textAlign: 'center',
-    fontSize: 34,
+    fontSize: 23,
     fontWeight: '700',
   },
   title: {
     color: Palette.text,
     textAlign: 'center',
-    fontSize: 24,
+    fontSize: 23,
     fontWeight: '700',
-    marginTop: 12,
+    marginTop: 8,
   },
   subtitle: {
-    color: '#68605E',
+    color: Palette.textSecondary,
     textAlign: 'center',
     fontSize: 15,
     lineHeight: 22,
     marginTop: 7,
-    marginBottom: 24,
+    marginBottom: 18,
+  },
+  sectionLabel: {
+    color: Palette.primary,
+    fontWeight: '700',
+    fontSize: 15,
+    marginTop: 5,
+    marginBottom: 12,
   },
   fieldLabel: {
     color: Palette.text,
@@ -61,8 +68,8 @@ export const authStyles = StyleSheet.create({
   },
   field: {
     color: Palette.text,
-    backgroundColor: '#FFFFFF',
-    borderColor: '#DED0CC',
+    backgroundColor: Palette.white,
+    borderColor: Palette.muted,
     borderWidth: 1,
     borderRadius: 14,
     paddingHorizontal: 14,
@@ -78,19 +85,19 @@ export const authStyles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 4,
   },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  linkButton: { alignItems: 'center', paddingVertical: 14 },
-  linkText: { color: Palette.primary, fontSize: 15, fontWeight: '600' },
+  primaryButtonText: { color: Palette.white, fontSize: 16, fontWeight: '700' },
+  linkButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  linkText: { color: Palette.primary, fontSize: 16, fontWeight: '600', textAlign: 'center' },
   error: {
-    color: '#A02737',
-    backgroundColor: '#FCE8E8',
+    color: Palette.primary,
+    backgroundColor: Palette.background,
     padding: 12,
     borderRadius: 12,
     marginBottom: 14,
     lineHeight: 20,
   },
   demo: {
-    backgroundColor: '#F3E8E4',
+    backgroundColor: Palette.background,
     borderRadius: 14,
     padding: 14,
     marginTop: 2,
@@ -103,12 +110,12 @@ export const authStyles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#DED0CC',
-    backgroundColor: '#FFFFFF',
+    borderColor: Palette.muted,
+    backgroundColor: Palette.white,
     borderRadius: 13,
     padding: 12,
   },
-  roleButtonSelected: { borderColor: Palette.primary, backgroundColor: '#F3E8E4' },
+  roleButtonSelected: { borderColor: Palette.primary, backgroundColor: Palette.background },
   roleText: { color: Palette.text, fontSize: 13, fontWeight: '600' },
 });
 
@@ -122,7 +129,7 @@ export function AuthField({
       <TextInput
         accessibilityLabel={label}
         autoCapitalize="none"
-        placeholderTextColor="#938986"
+        placeholderTextColor={Palette.textSecondary}
         style={authStyles.field}
         {...props}
       />
@@ -147,7 +154,7 @@ export function AuthSubmit({
       style={({ pressed }) => [authStyles.primaryButton, pressed && { opacity: 0.86 }]}
     >
       {loading ? (
-        <ActivityIndicator color="#FFFFFF" />
+        <ActivityIndicator color={Palette.white} />
       ) : (
         <Text style={authStyles.primaryButtonText}>{label}</Text>
       )}

@@ -1,6 +1,8 @@
 import {
   Controller,
+  Body,
   Post,
+  StreamableFile,
   UploadedFile,
   UseInterceptors,
   UseGuards,
@@ -22,6 +24,20 @@ export class VoiceController {
     private readonly voiceService: VoiceService,
     private readonly profiles: ProfileService,
   ) {}
+
+  @Post('speak')
+  async speak(@Body() body: { text?: unknown }): Promise<StreamableFile> {
+    if (typeof body?.text !== 'string') {
+      throw new BadRequestException('Text is required.');
+    }
+    const audio = await this.voiceService.synthesizeSpeech(body.text);
+    const contentType = this.voiceService.getSpeechContentType();
+    const extension = contentType === 'audio/wav' ? 'wav' : 'mp3';
+    return new StreamableFile(audio, {
+      type: contentType,
+      disposition: `inline; filename="care-circle.${extension}"`,
+    });
+  }
 
   @Post('process')
   @UseInterceptors(

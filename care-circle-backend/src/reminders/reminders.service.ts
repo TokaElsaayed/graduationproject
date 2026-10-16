@@ -142,7 +142,7 @@ export class RemindersService implements OnModuleInit, OnModuleDestroy {
     const dose = this.doses.find((item) => item.id === doseId && item.userId === userId);
     if (!dose) throw new NotFoundException('Dose not found.');
     if (dose.status !== 'pending') {
-      return { status: dose.status, response: dose.status === 'taken' ? 'الجرعة دي اتسجلت قبل كده.' : 'ميعاد الجرعة دي عدى.' };
+      return { status: dose.status, response: dose.status === 'taken' ? 'تم تسجيل هذه الجرعة من قبل.' : 'لقد مرّ موعد هذه الجرعة.' };
     }
 
     const confirmation = await this.parseConfirmation(transcript);
@@ -150,21 +150,21 @@ export class RemindersService implements OnModuleInit, OnModuleDestroy {
       return {
         status: dose.status,
         confirmation,
-        response: 'مسمعتش كويس. ممكن تقول: خدت الدوا أو لسه ماخدتوش؟',
+        response: 'لم أسمعك بوضوح. هل تناولت الدواء؟ يمكنك قول نعم، أو ليس بعد.',
       };
     }
     if (!confirmation) {
       return {
         status: dose.status,
         confirmation,
-        response: 'حاضر. لما تاخد الدوا قولي: خدت الدوا.',
+        response: 'حسناً. عندما تتناول الدواء، أخبرني من فضلك.',
       };
     }
 
     dose.status = 'taken';
     dose.confirmedAt = new Date().toISOString();
     this.clearRetry(dose.id);
-    return { status: dose.status, confirmation, confirmedAt: dose.confirmedAt, response: 'تمام، سجلت إنك خدت الدوا.' };
+    return { status: dose.status, confirmation, confirmedAt: dose.confirmedAt, response: 'شكراً لك، تم تسجيل أنك تناولت الدواء.' };
   }
 
   async parseConfirmation(transcript: string): Promise<ConfirmationValue> {

@@ -1,3 +1,4 @@
+import { Palette } from '@/constants/theme';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { ReminderDose } from './reminders-api';
@@ -16,7 +17,7 @@ export async function requestReminderPermission(): Promise<boolean> {
       name: 'Medicine reminders',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#702A39',
+      lightColor: Palette.primary,
     });
   }
   const current = await Notifications.getPermissionsAsync();

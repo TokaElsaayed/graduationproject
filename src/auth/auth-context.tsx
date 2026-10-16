@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { API_BASE_URL } from '@/config/api';
-import { clearToken, readToken, saveToken } from '@/auth/token-storage';
+import { clearToken, saveToken } from '@/auth/token-storage';
 
 export type AccountRole = 'caregiver' | 'older_adult';
 
@@ -20,7 +20,7 @@ interface AuthContextValue {
   token: string | null;
   user: AuthUser | null;
   isReady: boolean;
-  logIn: (email: string, password: string) => Promise<void>;
+  logIn: (email: string, password: string) => Promise<AuthUser>;
   signUp: (input: {
     fullName: string;
     email: string;
@@ -61,21 +61,11 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
 
   useEffect(() => {
     let active = true;
-    void (async () => {
-      try {
-        const savedToken = await readToken();
-        if (!savedToken) return;
-        const currentUser = await request<AuthUser>('/auth/me', undefined, savedToken);
-        if (active) {
-          setToken(savedToken);
-          setUser(currentUser);
-        }
-      } catch {
-        await clearToken();
-      } finally {
-        if (active) setIsReady(true);
-      }
-    })();
+    // Require a fresh sign-in on each app launch so the older adult daily-care
+    // flow always starts from the login screen.
+    void clearToken().catch(() => undefined).finally(() => {
+      if (active) setIsReady(true);
+    });
     return () => {
       active = false;
     };
@@ -87,9 +77,10 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
     setUser(result.user);
   }
 
-  async function logIn(email: string, password: string) {
+  async function logIn(email: string, password: string): Promise<AuthUser> {
     const result = await request<AuthResult>('/auth/login', { email, password });
     await acceptAuthResult(result);
+    return result.user;
   }
 
   async function signUp(input: {
